@@ -5,17 +5,15 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Minimal Supabase REST client for posting events and reading state.
- * Replace the URL and KEY with your own project values.
- */
 object SupabaseClient {
 
-    // TODO: Replace with your Supabase project values
     private const val SUPABASE_URL = "https://dhtokbbbnrzbsedlmebh.supabase.co"
     private const val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRodG9rYmJibnJ6YnNlZGxtZWJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNDIwOTEsImV4cCI6MjA5ODcxODA5MX0.l-567ptGRkT48UTZv2y-ZSZZTH56DmBgIYrAwpUYJzs"
 
     data class PetStateEntry(val key: String, val value: String)
+
+    private var lastReadId: Long = -1L
+    private var readCount: Int = 0
 
     fun postGesture(type: String, x: Int, y: Int) {
         val body = JSONObject().apply {
@@ -48,6 +46,24 @@ object SupabaseClient {
                 val arr = JSONArray(response)
                 if (arr.length() > 0) {
                     val obj = arr.getJSONObject(0)
+                    val id = obj.getLong("id")
+
+                    // Count reads, delete after 3
+                    if (id == lastReadId) {
+                        readCount++
+                    } else {
+                        lastReadId = id
+                        readCount = 1
+                    }
+
+                    if (readCount > 3) {
+                        // Already shown 3 times, delete and return null
+                        deleteState(id)
+                        lastReadId = -1L
+                        readCount = 0
+                        return null
+                    }
+
                     PetStateEntry(
                         key = obj.getString("state_key"),
                         value = obj.optString("state_value", "")
@@ -57,6 +73,20 @@ object SupabaseClient {
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun deleteState(id: Long) {
+        try {
+            val url = URL("$SUPABASE_URL/rest/v1/pet_state?id=eq.$id")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "DELETE"
+            conn.setRequestProperty("apikey", SUPABASE_KEY)
+            conn.setRequestProperty("Authorization", "Bearer $SUPABASE_KEY")
+            conn.connectTimeout = 5000
+            conn.readTimeout = 5000
+            conn.responseCode
+            conn.disconnect()
+        } catch (_: Exception) {}
     }
 
     private fun post(table: String, body: JSONObject) {
