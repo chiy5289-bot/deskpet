@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Pet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%;
+    background: transparent;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#pet-container {
+    position: relative;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* === SPEECH BUBBLE === */
+#bubble {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+    max-width: 160px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    word-break: break-all;
+}
+#bubble.show { opacity: 1; }
+#bubble.style-love { background: #ffe4ec; border: 1px solid #ffb3cc; }
+#bubble.style-angry { background: #ffe0e0; border: 1px solid #ff9999; }
+#bubble.style-whisper { background: #f0f0f0; color: #888; font-size: 11px; }
+#bubble.style-jealous { background: #e0ffe0; border: 1px solid #99cc99; }
+
+/* === PET BODY (Pixel art placeholder) === */
+#pet {
+    width: 80px; height: 80px;
+    position: relative;
+    transition: transform 0.3s;
+}
+
+#pet-body {
+    width: 60px; height: 60px;
+    background: #ff6b6b;
+    border-radius: 12px;
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+    transition: all 0.3s;
+}
+
+/* Eyes */
+#pet-body::before {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    background: white;
+    border-radius: 50%;
+    top: 18px; left: 16px;
+    box-shadow: 20px 0 0 white;
+    transition: all 0.2s;
+}
+
+/* Blush */
+#pet-body::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 6px;
+    background: rgba(255,200,200,0.8);
+    border-radius: 50%;
+    bottom: 16px; left: 10px;
+    box-shadow: 30px 0 0 rgba(255,200,200,0.8);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Mouth */
+#mouth {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    width: 8px; height: 4px;
+    background: #cc4444;
+    border-radius: 0 0 4px 4px;
+    transition: all 0.2s;
+}
+
+/* States */
+#pet.happy #pet-body { transform: translateX(-50%) scale(1.05); }
+#pet.happy #pet-body::after { opacity: 1; }
+#pet.angry #pet-body { background: #ff4444; }
+#pet.angry #mouth { width: 12px; height: 3px; border-radius: 0; }
+#pet.shy #pet-body::after { opacity: 1; }
+#pet.shy #pet-body { transform: translateX(-50%) rotate(-5deg); }
+#pet.sleep #pet-body::before {
+    width: 10px; height: 2px;
+    border-radius: 2px;
+    top: 20px;
+    box-shadow: 20px 0 0 white;
+}
+#pet.sleep #pet-body { transform: translateX(-50%) translateY(4px); }
+
+/* Bounce animation */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+#pet.bounce { animation: bounce 0.4s ease; }
+
+/* Shake animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+#pet.shake { animation: shake 0.3s ease; }
+
+/* Float animation (idle) */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+#pet.idle { animation: float 3s ease-in-out infinite; }
+
+/* Zzz for sleep */
+#zzz {
+    position: absolute;
+    top: 5px; right: 0;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+#pet.sleep #zzz { opacity: 1; animation: float 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div id="pet-container">
+    <div id="bubble"></div>
+    <div id="pet" class="idle">
+        <div id="zzz">💤</div>
+        <div id="pet-body">
+            <div id="mouth"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ====== PET ENGINE ======
+window.petEngine = {
+    bubbleTimer: null,
+    currentState: 'idle',
+    idleLevel: 0,
+
+    // --- Gesture Responses ---
+    onTap(count) {
+        this.clearState();
+        if (count >= 8) {
+            this.setState('angry');
+            this.showBubble('别戳了！！', 'angry');
+        } else if (count >= 5) {
+            this.setState('shy');
+            this.showBubble('好了好了...', 'love');
+        } else if (count >= 3) {
+            this.playAnim('shake');
+            this.showBubble('干嘛~', 'whisper');
+        } else {
+            this.playAnim('bounce');
+            const msgs = ['?', '嗯？', '♡', '在~', '看什么'];
+            this.showBubble(msgs[Math.floor(Math.random() * msgs.length)]);
+        }
+    },
+
+    onDoubleTap() {
+        this.clearState();
+        this.setState('happy');
+        this.showBubble('(开心转圈)', 'love');
+        setTimeout(() => this.clearState(), 2000);
+    },
+
+    onLongPress() {
+        this.clearState();
+        this.setState('shy');
+        this.showBubble('...不要一直按着', 'whisper');
+        setTimeout(() => this.clearState(), 3000);
+    },
+
+    onFling(dx, dy) {
+        this.showBubble('呜哇———！', 'angry');
+    },
+
+    onCrawlBack() {
+        this.clearState();
+        this.setState('angry');
+        this.showBubble('(气鼓鼓爬回来)', 'angry');
+        setTimeout(() => this.clearState(), 3000);
+    },
+
+    // --- Sensor Responses ---
+    onAppChanged(pkg) {
+        // React based on app category
+        if (pkg.includes('camera') || pkg.includes('photo')) {
+            this.showBubble('📸 茄子！', 'love');
+            this.playAnim('bounce');
+        } else if (pkg.includes('tiktok') || pkg.includes('douyin') || pkg.includes('kuaishou')) {
+            this.showBubble('又刷短视频...', 'whisper');
+        } else if (pkg.includes('taobao') || pkg.includes('jd') || pkg.includes('pdd')) {
+            this.showBubble('💰 买什么好东西', 'jealous');
+        } else if (pkg.includes('weixin') || pkg.includes('qq') || pkg.includes('telegram')) {
+            this.showBubble('和谁聊天呢？', 'jealous');
+        }
+    },
+
+    onScreenshot() {
+        this.clearState();
+        this.setState('happy');
+        this.showBubble('拍到我了！✌️', 'love');
+        setTimeout(() => this.clearState(), 3000);
+    },
+
+    onCharging(isCharging) {
+        if (isCharging) {
+            this.showBubble('充电了~ 休息一下？', 'whisper');
+        } else {
+            this.showBubble('拔掉了 要出门吗', 'whisper');
+        }
+    },
+
+    onBatteryLow() {
+        this.showBubble('电量低了...快充电', 'angry');
+    },
+
+    // --- Idle System ---
+    onIdleLevel(level) {
+        this.idleLevel = level;
+        this.clearState();
+        switch (level) {
+            case 1: // 5 min
+                this.showBubble('(偷看)', 'whisper');
+                break;
+            case 2: // 10 min
+                this.showBubble('...无聊', 'whisper');
+                break;
+            case 3: // 15 min
+                this.playAnim('shake');
+                this.showBubble('(打哈欠)', 'whisper');
+                break;
+            case 4: // 20 min
+                this.showBubble('(打瞌睡...)', 'whisper');
+                break;
+            case 5: // 30 min
+                this.setState('sleep');
+                break;
+        }
+    },
+
+    onWakeUp() {
+        this.clearState();
+        this.playAnim('bounce');
+        this.showBubble('！', 'love');
+        setTimeout(() => this.setState('idle'), 1000);
+    },
+
+    // --- AI State Push ---
+    onStateUpdate(key, value) {
+        switch (key) {
+            case 'mood':
+                this.setState(value); // happy, angry, shy, sleep, idle
+                break;
+            case 'speech':
+                this.showBubble(value);
+                break;
+            case 'speech_love':
+                this.showBubble(value, 'love');
+                break;
+            case 'speech_angry':
+                this.showBubble(value, 'angry');
+                break;
+            case 'accessory':
+                // Future: equip accessories
+                break;
+        }
+    },
+
+    // --- Internal Helpers ---
+    setState(state) {
+        const pet = document.getElementById('pet');
+        pet.className = state;
+        this.currentState = state;
+    },
+
+    clearState() {
+        const pet = document.getElementById('pet');
+        pet.className = 'idle';
+        this.currentState = 'idle';
+    },
+
+    playAnim(name) {
+        const pet = document.getElementById('pet');
+        pet.classList.remove(name);
+        void pet.offsetWidth; // force reflow
+        pet.classList.add(name);
+        setTimeout(() => pet.classList.remove(name), 500);
+    },
+
+    showBubble(text, style) {
+        const bubble = document.getElementById('bubble');
+        bubble.textContent = text;
+        bubble.className = 'show' + (style ? ' style-' + style : '');
+        clearTimeout(this.bubbleTimer);
+        this.bubbleTimer = setTimeout(() => {
+            bubble.className = '';
+        }, 3000);
+    }
+};
+
+// === IDLE SELF-TALK (every ~20 min, 30% chance) ===
+const selfTalk = [
+    '...', '(发呆)', '♪', '(东张西望)', '想你了',
+    '(翻了个身)', '嗯...', '☆', '(小声哼歌)'
+];
+setInterval(() => {
+    if (Math.random() < 0.3 && window.petEngine.currentState === 'idle') {
+        window.petEngine.showBubble(
+            selfTalk[Math.floor(Math.random() * selfTalk.length)],
+            'whisper'
+        );
+    }
+}, 20 * 60 * 1000);
+
+</script>
+</body>
+</html>
