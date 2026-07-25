@@ -257,8 +257,7 @@ class OverlayService : Service() {
     private var lastInteractionTime = System.currentTimeMillis()
     private var currentIdleLevel = 0
 
-    private fun startIdleTracking()
-        startWalkLoop() {
+    private fun startIdleTracking() {
         handler.postDelayed(object : Runnable {
             override fun run() {
                 val idleMinutes = (System.currentTimeMillis() - lastInteractionTime) / 60000
@@ -406,6 +405,9 @@ class OverlayService : Service() {
         overlayView = null
         super.onDestroy()
     }
+
+    // ====== WALK ======
+
     private fun startWalkLoop() {
         handler.postDelayed(object : Runnable {
             override fun run() {
@@ -422,7 +424,7 @@ class OverlayService : Service() {
         val petW = dpToPx(PET_SIZE_DP)
         val dx = if (Math.random() > 0.5) 3 else -3
         val facing = if (dx > 0) 1 else -1
-        callJs("window.petEngine\u0026\u0026window.petEngine.setFacing($facing)")
+        callJs("window.petEngine&&window.petEngine.setFacing($facing)")
         var step = 0
         val total = (50 + (Math.random() * 80)).toInt()
         handler.post(object : Runnable {
