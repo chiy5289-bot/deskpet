@@ -203,10 +203,13 @@ function draw(){
   if(facing<0){cx.translate(cv.width,0);cx.scale(-1,1);}
 
   drawShadow(bx,by,bw,bh);
-  drawLegs(bx,by,bw,bh);
+  // Hands
+px(bx-1,by+Math.floor(bh/2),C.body);px(bx-2,by+Math.floor(bh/2),C.dk);
+px(bx+bw,by+Math.floor(bh/2),C.body);px(bx+bw+1,by+Math.floor(bh/2),C.dk);
+drawLegs(bx,by,bw,bh);
   drawBody(bx,by,bw,bh);
   drawEyes(bx,by,bw,bh);
-  drawMouth(bx,by,bw,bh);
+  
 
   if(state==='sleep')drawSleepHat(bx,by,bw);
   if(state==='read')drawBook(bx,by,bw,bh);
