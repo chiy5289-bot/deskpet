@@ -52,6 +52,7 @@ class OverlayService : Service() {
         startSensors()
         startStatePolling()
         startIdleTracking()
+        startWalkLoop()
     }
 
     // ====== OVERLAY SETUP ======
@@ -256,7 +257,8 @@ class OverlayService : Service() {
     private var lastInteractionTime = System.currentTimeMillis()
     private var currentIdleLevel = 0
 
-    private fun startIdleTracking() {
+    private fun startIdleTracking()
+        startWalkLoop() {
         handler.postDelayed(object : Runnable {
             override fun run() {
                 val idleMinutes = (System.currentTimeMillis() - lastInteractionTime) / 60000
@@ -403,5 +405,38 @@ class OverlayService : Service() {
         }
         overlayView = null
         super.onDestroy()
+    }
+    private fun startWalkLoop() {
+        handler.postDelayed(object : Runnable {
+            override fun run() {
+                if (currentIdleLevel == 0 && Math.random() < 0.3) doWalk()
+                handler.postDelayed(this, 8000)
+            }
+        }, 10000)
+    }
+
+    private fun doWalk() {
+        val size = android.graphics.Point()
+        windowManager?.defaultDisplay?.getSize(size)
+        val screenW = size.x
+        val petW = dpToPx(PET_SIZE_DP)
+        val dx = if (Math.random() > 0.5) 3 else -3
+        val facing = if (dx > 0) 1 else -1
+        callJs("window.petEngine\u0026\u0026window.petEngine.setFacing($facing)")
+        var step = 0
+        val total = (50 + (Math.random() * 80)).toInt()
+        handler.post(object : Runnable {
+            override fun run() {
+                if (step >= total) return
+                params?.let { p ->
+                    p.x += dx
+                    if (p.x < 0) { p.x = 0; return }
+                    if (p.x > screenW - petW) { p.x = screenW - petW; return }
+                    try { windowManager?.updateViewLayout(overlayView, p) } catch (_: Exception) {}
+                }
+                step++
+                handler.postDelayed(this, 33)
+            }
+        })
     }
 }
