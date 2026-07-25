@@ -74,14 +74,14 @@ function drawEyes(bx,by,bw,bh){
     px(lx,ey+1,C.eye);px(lx+1,ey,C.eye);px(lx+2,ey+1,C.eye);
     px(rx,ey+1,C.eye);px(rx+1,ey,C.eye);px(rx+2,ey+1,C.eye);
   } else if(state==='angry'){
-    px(lx,ey,C.eye);px(lx+1,ey,C.eye);px(rx,ey,C.eye);px(rx+1,ey,C.eye);
+    px(lx,ey,C.eye);px(rx,ey,C.eye);
     px(lx,ey-1,C.eye);px(rx+1,ey-1,C.eye);
   } else if(state==='dizzy'){
     const o=Math.round(Math.sin(dizzyAngle)*1);
     px(lx+o,ey,C.eye);px(lx+1,ey+o,C.eye);
     px(rx+o,ey,C.eye);px(rx+1,ey+o,C.eye);
   } else {
-    px(lx,ey,C.eye);px(lx+1,ey,C.eye);px(rx,ey,C.eye);px(rx+1,ey,C.eye);
+    px(lx,ey,C.eye);px(rx,ey,C.eye);
   }
 }
 
