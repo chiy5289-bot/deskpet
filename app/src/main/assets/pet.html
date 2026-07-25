@@ -65,23 +65,23 @@ function drawBody(bx,by,bw,bh){
 }
 
 function drawEyes(bx,by,bw,bh){
-  const ey=by+Math.floor(bh*0.4);
-  const lx=bx+Math.floor(bw*0.28);
-  const rx=bx+Math.floor(bw*0.62);
+  const ey=by+Math.floor(bh*0.25);
+  const lx=bx+Math.floor(bw*0.22);
+  const rx=bx+Math.floor(bw*0.68);
   if(state==='sleep'||state==='flat'){
     rect(lx,ey+1,2,1,C.eye);rect(rx,ey+1,2,1,C.eye);
   } else if(state==='screenshot'||state==='happy'||state==='pet'){
     px(lx,ey+1,C.eye);px(lx+1,ey,C.eye);px(lx+2,ey+1,C.eye);
     px(rx,ey+1,C.eye);px(rx+1,ey,C.eye);px(rx+2,ey+1,C.eye);
   } else if(state==='angry'){
-    rect(lx,ey,2,2,C.eye);rect(rx,ey,2,2,C.eye);
+    px(lx,ey,C.eye);px(lx+1,ey,C.eye);px(rx,ey,C.eye);px(rx+1,ey,C.eye);
     px(lx,ey-1,C.eye);px(rx+1,ey-1,C.eye);
   } else if(state==='dizzy'){
     const o=Math.round(Math.sin(dizzyAngle)*1);
     px(lx+o,ey,C.eye);px(lx+1,ey+o,C.eye);
     px(rx+o,ey,C.eye);px(rx+1,ey+o,C.eye);
   } else {
-    rect(lx,ey,2,2,C.eye);rect(rx,ey,2,2,C.eye);
+    px(lx,ey,C.eye);px(lx+1,ey,C.eye);px(rx,ey,C.eye);px(rx+1,ey,C.eye);
   }
 }
 
@@ -204,8 +204,8 @@ function draw(){
 
   drawShadow(bx,by,bw,bh);
   // Hands
-px(bx-1,by+Math.floor(bh/2),C.body);px(bx-2,by+Math.floor(bh/2),C.dk);
-px(bx+bw,by+Math.floor(bh/2),C.body);px(bx+bw+1,by+Math.floor(bh/2),C.dk);
+px(bx-1,by+Math.floor(bh/2),C.body);px(bx-2,by+Math.floor(bh/2),C.body);px(bx-1,by+Math.floor(bh/2)+1,C.dk);px(bx-2,by+Math.floor(bh/2)+1,C.dk);
+px(bx+bw,by+Math.floor(bh/2),C.body);px(bx+bw+1,by+Math.floor(bh/2),C.body);px(bx+bw,by+Math.floor(bh/2)+1,C.dk);px(bx+bw+1,by+Math.floor(bh/2)+1,C.dk);
 drawLegs(bx,by,bw,bh);
   drawBody(bx,by,bw,bh);
   drawEyes(bx,by,bw,bh);
